@@ -1,5 +1,5 @@
-import SignIn from './SignIn';
+import Hero from './components/Hero.tsx';
 
 export default function App() {
-  return <SignIn />;
+  return <Hero />;
 }
