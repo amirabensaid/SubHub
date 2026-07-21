@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import SignIn from "./SignIn";
 import SignUp from "./SignUp";
 import MarketingPage from './MarketingPage';
+import CrudDashboard from './crud-dashboard/CrudDashboard';
 
 export default function App() {
   return (
@@ -11,6 +12,7 @@ export default function App() {
         <Route path="/SignIn" element={<SignIn />} />
         <Route path="/SignUp" element={<SignUp />} />
         <Route path="/marketing" element={<MarketingPage />} />
+        <Route path="/crud-dashboard" element={<CrudDashboard />} />
       </Routes>
     </BrowserRouter>
   );
