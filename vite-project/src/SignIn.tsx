@@ -13,11 +13,13 @@ import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import MuiCard from '@mui/material/Card';
 import { styled } from '@mui/material/styles';
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import ForgotPassword from './components/ForgotPassword.tsx';
 import AppTheme from './shared-theme/AppTheme.tsx';
 import ColorModeSelect from './shared-theme/ColorModeSelect.tsx';
 import { GoogleIcon, FacebookIcon, SitemarkIcon } from './components/CustomIcons.tsx';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -62,10 +64,12 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
 }));
 
 export default function SignIn(props: { disableCustomTheme?: boolean }) {
+  const navigate = useNavigate();
   const [emailError, setEmailError] = React.useState(false);
   const [emailErrorMessage, setEmailErrorMessage] = React.useState('');
   const [passwordError, setPasswordError] = React.useState(false);
   const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('');
+  const [submitError, setSubmitError] = React.useState('');
   const [open, setOpen] = React.useState(false);
 
   const handleClickOpen = () => {
@@ -76,16 +80,39 @@ export default function SignIn(props: { disableCustomTheme?: boolean }) {
     setOpen(false);
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    if (emailError || passwordError) {
-      event.preventDefault();
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!validateInputs()) {
       return;
     }
+
     const data = new FormData(event.currentTarget);
-    console.log({
+    const payload = {
       email: data.get('email'),
       password: data.get('password'),
-    });
+    };
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/signin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Sign in failed');
+      }
+
+      setSubmitError('');
+      navigate('/crud-dashboard');
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Sign in failed. Please try again.');
+    }
   };
 
   const validateInputs = () => {
@@ -179,11 +206,15 @@ export default function SignIn(props: { disableCustomTheme?: boolean }) {
               label="Remember me"
             />
             <ForgotPassword open={open} handleClose={handleClose} />
+            {submitError ? (
+              <Typography color="error" sx={{ textAlign: 'center' }}>
+                {submitError}
+              </Typography>
+            ) : null}
             <Button
               type="submit"
               fullWidth
               variant="contained"
-              onClick={validateInputs}
             >
               Sign in
             </Button>

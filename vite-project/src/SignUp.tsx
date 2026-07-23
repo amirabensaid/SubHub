@@ -13,7 +13,10 @@ import { styled } from '@mui/material/styles';
 import AppTheme from './shared-theme/AppTheme';
 import ColorModeSelect from './shared-theme/ColorModeSelect';
 import { SitemarkIcon } from './components/CustomIcons';
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
@@ -57,12 +60,14 @@ const SignUpContainer = styled(Stack)(({ theme }) => ({
 }));
 
 export default function SignUp(props: { disableCustomTheme?: boolean }) {
+  const navigate = useNavigate();
   const [emailError, setEmailError] = React.useState(false);
   const [emailErrorMessage, setEmailErrorMessage] = React.useState('');
   const [passwordError, setPasswordError] = React.useState(false);
   const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('');
   const [nameError, setNameError] = React.useState(false);
   const [nameErrorMessage, setNameErrorMessage] = React.useState('');
+  const [submitError, setSubmitError] = React.useState('');
 
   const validateInputs = () => {
     const email = document.getElementById('email') as HTMLInputElement;
@@ -101,18 +106,40 @@ export default function SignUp(props: { disableCustomTheme?: boolean }) {
     return isValid;
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    if (nameError || emailError || passwordError) {
-      event.preventDefault();
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!validateInputs()) {
       return;
     }
+
     const data = new FormData(event.currentTarget);
-    console.log({
+    const payload = {
       name: data.get('name'),
-      lastName: data.get('lastName'),
       email: data.get('email'),
       password: data.get('password'),
-    });
+    };
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Sign up failed');
+      }
+
+      setSubmitError('');
+      navigate('/signin');
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Sign up failed. Please try again.');
+    }
   };
 
   return (
@@ -181,11 +208,15 @@ export default function SignUp(props: { disableCustomTheme?: boolean }) {
             </FormControl>
           
             
+            {submitError ? (
+              <Typography color="error" sx={{ textAlign: 'center' }}>
+                {submitError}
+              </Typography>
+            ) : null}
             <Button
               type="submit"
               fullWidth
               variant="contained"
-              onClick={validateInputs}
             >
               Créer mon compte
             </Button>
@@ -197,7 +228,7 @@ export default function SignUp(props: { disableCustomTheme?: boolean }) {
               Already have an account?{' '}
               <Link
                 component={RouterLink}
-                to="/"
+                to="/signin"
                 variant="body2"
                 sx={{ alignSelf: 'center' }}
               >
